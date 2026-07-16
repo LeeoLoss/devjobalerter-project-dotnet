@@ -13,7 +13,8 @@ builder.Services.AddSingleton<INotificationService, WhatsAppNotificationService>
 
 // 2. Configuration Setup: Load appsettings.json for Twilio credentials and other settings
 builder.Configuration.SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddUserSecrets<Program>(optional: true);
 
 // 3. Register the Worker as a Hosted Service
 builder.Services.AddHostedService<Worker>();
