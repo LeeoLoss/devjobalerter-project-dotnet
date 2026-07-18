@@ -66,9 +66,9 @@ public class AdzunaJobService : IJobService
             // Map the Adzuna API response contracts to the Domain entity (JobVacancy)
             var vacancies = response.Results.Select(r => new JobVacancy
             {
-                Title = r.Title?.Trim() ?? "No Title",
-                Company = r.Company?.DisplayName?.Trim() ?? "No Company",
-                Location = r.Location?.DisplayName?.Trim() ?? "No Location",
+                Title = r.Title?.Trim() ?? "No Title Specified",
+                Company = r.Company?.DisplayName?.Trim() ?? "No Company Specified",
+                Location = r.Location?.DisplayName?.Trim() ?? "No Location Specified",
                 Url = r.RedirectUrl ?? "https://www.adzuna.com.br"
             }).ToList();
 
