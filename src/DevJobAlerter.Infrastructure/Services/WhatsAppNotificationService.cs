@@ -1,3 +1,4 @@
+using System.Text;
 using DevJobAlerter.Domain.Entities; // Required to recognize the JobVacancy domain entity
 using DevJobAlerter.Domain.Interfaces;
 using Microsoft.Extensions.Configuration; // Required to access appsettings.json configurations
@@ -25,10 +26,12 @@ public class WhatsAppNotificationService : INotificationService
     }
     
     /// Sends a formatted WhatsApp message to a recipient containing a list of job vacancies.
-    public async Task SendJobAlertAsync(string toPhoneNumber, List<JobVacancy> vacancies)
+    public async Task SendJobAlertAsync(string toPhoneNumber, IEnumerable<JobVacancy> vacancies)
     {
+        var jobList = vacancies.ToList() ?? new List<JobVacancy>();
+
         // 1. Guard Clause: Prevents sending an empty message if there are no vacancies
-        if (vacancies == null || vacancies.Count == 0)
+        if (!jobList.Any())
         {
             _logger.LogWarning("No job vacancies to send in the WhatsApp notification.");
             return;
@@ -52,23 +55,28 @@ public class WhatsAppNotificationService : INotificationService
             TwilioClient.Init(accountSid, authToken);
 
             // 5. Message Formatting: Builds the localized/styled string body containing all jobs
-            var messageBody = BuildMessageBody(vacancies);
+            var messageBody = BuildMessageBody(jobList);
 
-            _logger.LogInformation("Sending job alert to {phone} via WhatsApp...", toPhoneNumber);
+            _logger.LogInformation("Sending {count} job alert to {phone} via WhatsApp...", jobList.Count, toPhoneNumber);
         
-            // 6. API Dispatch: Calls Twilio's HTTP client to send the WhatsApp message
-            var message = await MessageResource.CreateAsync(
+            // 6. Phone Number Formatting: Ensures the phone number is formatted correctly
+            var formattedToPhoneNumber = toPhoneNumber.StartsWith("whatsapp:") ? toPhoneNumber : $"whatsapp:{toPhoneNumber}";
+            var formattedFromWhatsAppNumber = fromWhatsAppNumber.StartsWith("whatsapp:") ? fromWhatsAppNumber : $"whatsapp:{fromWhatsAppNumber}";
+           
+           // 7. API Dispatch: Calls Twilio's HTTP client to send the WhatsApp message
+            var message = await MessageResource.CreateAsync
+            (
                 body: messageBody,
-                from: new PhoneNumber(fromWhatsAppNumber),
-                to: new PhoneNumber($"whatsapp:{toPhoneNumber}")
+                from: new PhoneNumber(formattedFromWhatsAppNumber),
+                to: new PhoneNumber(formattedToPhoneNumber)
             );
 
-            // Logs the success alongside the Twilio Message SID for tracking purposes
+            // 8. Logs the success alongside the Twilio Message SID for tracking purposes
             _logger.LogInformation("WhatsApp notification sent successfully. Message SID: {sid}", message.Sid); 
         }
         catch (Exception ex)
         {
-            // 7. Error Handling: Captures and logs any API/network failure without crashing the app
+            // 9. Error Handling: Captures and logs any API/network failure without crashing the app
             _logger.LogError(ex, "Failed to send WhatsApp message via Twilio.");
         }
     }
@@ -78,19 +86,25 @@ public class WhatsAppNotificationService : INotificationService
     private string BuildMessageBody(List<JobVacancy> vacancies)
     {
         // Setup the header of the notification
-        var body = $"🔔 *DevJobAlerter - New Job Openings Available!*\n\nWe found {vacancies.Count} recent vacancy(ies):\n\n";
-    
+        var builder = new StringBuilder(); 
+
+        builder.AppendLine($"🔔 *DevJobAlerter - New Job Openings Available!*");
+        builder.AppendLine($"\nWe found *{vacancies.Count}* recent vacancy(ies):\n");
+        builder.AppendLine("-------------------------------");
         // Dynamically append each vacancy found
         foreach (var job in vacancies)
         {
-            body += $"💼 *{job.Title}*\n";
-            body += $"🏢 Company: {job.Company}\n";
-            body += $"📍 Location: {job.Location}\n";
-            body += $"🔗 Link: {job.Url}\n\n";
+            builder.AppendLine($"💼 *{job.Title}*");
+            builder.AppendLine($"🏢 Company: {job.Company}");
+            builder.AppendLine($"📍 Location: {job.Location}");
+            builder.AppendLine($"🔗 Link: {job.Url}");
+            builder.AppendLine("-------------------------------");
         }
+
+        // Append the footer
+        builder.AppendLine("\nGood luck!\n\nWe believe in you! 💪\n\n*DevJobAlerter Team*");
+        builder.AppendLine("*DevJobAlerter Worker Service - Your daily dose of job opportunities!*");
         
-        // Setup the professional/encouraging footer
-        body += "Good luck!\n\nWe believe in you! 💪\n\n*DevJobAlerter Team*";
-        return body;
+        return builder.ToString();
     }
 }

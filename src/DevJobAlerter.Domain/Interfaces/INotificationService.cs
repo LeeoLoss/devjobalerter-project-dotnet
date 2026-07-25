@@ -4,5 +4,5 @@ namespace DevJobAlerter.Domain.Interfaces;
 
 public interface INotificationService
 {
-    Task SendJobAlertAsync(string toPhoneNumber, List<JobVacancy> vacancies);
+    Task SendJobAlertAsync(string toPhoneNumber, IEnumerable<JobVacancy> vacancies);
 }
