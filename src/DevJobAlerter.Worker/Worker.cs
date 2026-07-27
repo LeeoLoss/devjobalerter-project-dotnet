@@ -1,38 +1,52 @@
 using DevJobAlerter.Domain.Entities;
 using DevJobAlerter.Domain.Interfaces;
+using DevJobAlerter.Worker.Settings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DevJobAlerter.Worker;
 
-// Background service that runs continuously to check for new job vacancies and send alerts.
 public class Worker : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
-    private readonly INotificationService _notificationService;
-    private readonly IJobService _jobService; // Added to fetch real jobs
-    private readonly string[] _searchTerms; // Store the search terms for job filtering
+    private readonly ILogger<Worker> _logger; // Logger for logging information and errors
+    private readonly INotificationService _notificationService; // Service to send job alerts
+    private readonly IJobService _jobService; // Service to fetch job vacancies
+    private readonly JobSearchSettings _settings; // Settings from appsettings.json
     private readonly HashSet<string> _sentJobIds = new();
 
-    // Define the interval for checking new job vacancies (e.g., 1 hour).
-    private readonly TimeSpan _checkInterval = TimeSpan.FromHours(1);
 
+    // 1. Constructor to inject dependencies and settings
     public Worker(
         ILogger<Worker> logger, 
         INotificationService notificationService, 
         IJobService jobService,
-        string[] searchTerms) // Injected the search terms here
+        IOptions<JobSearchSettings> options)
     {
         _logger = logger;
         _notificationService = notificationService;
         _jobService = jobService;
-        _searchTerms = searchTerms;
+        _settings = options.Value;
     }
 
-    // Core execution loop of the background worker.
+    // 2. The main execution loop of the worker service
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Starting DevJobAlerter Worker Service with search terms: {Terms}", string.Join(", ", _searchTerms));
+        _logger.LogInformation("Starting DevJobAlerter Worker Service with search terms: {Terms}", string.Join(", ", _settings.SearchTerms));
+
+        if (string.IsNullOrWhiteSpace(_settings.TargetPhoneNumber))
+        {
+            _logger.LogError("Target phone number is not configured in appsettings or User Secrets.");
+            return;
+        }
+
+        if (!_settings.SearchTerms.Any())
+        {
+            _logger.LogWarning("No search terms configured in JobSearchSettings.");
+            return;
+        }
+
+        var checkInterval = TimeSpan.FromMinutes(_settings.SearchIntervalMinutes);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -40,33 +54,26 @@ public class Worker : BackgroundService
             {
                 _logger.LogInformation("Starting job alert cycle at: {time}", DateTimeOffset.Now);
 
-                // 2. Define the recipient's phone number
-                var targetPhoneNumber = "+5511944017974"; 
-
-                
-                foreach (var term in _searchTerms)
+                foreach (var term in _settings.SearchTerms)
                 {
+                    if (stoppingToken.IsCancellationRequested) break;
+
                     _logger.LogInformation("Checking for new job vacancies with search term: {term}", term);
 
-                    // Fetch job vacancies based on the search term
                     var jobs = await _jobService.GetRecentJobsAsync(term);
-
                     var newJobs = jobs.Where(job => !_sentJobIds.Contains(job.Url)).ToList();
 
                     if (newJobs.Any())
                     {
-                        // Send notification for the new job vacancies
-                        await _notificationService.SendJobAlertAsync(targetPhoneNumber, newJobs);
+                        await _notificationService.SendJobAlertAsync(_settings.TargetPhoneNumber, newJobs);
                         
                         foreach (var job in newJobs)
                         {
-                            _sentJobIds.Add(job.Url); // Mark the job as sent
-                            
-                            // Send notification for each job vacancy found
+                            _sentJobIds.Add(job.Url);
                             _logger.LogInformation("Sent notification for job: {title} at {company}", job.Title, job.Company);
                         }
                         
-                        _logger.LogInformation("Sent notification for {count} new job vacancies.", newJobs.Count);
+                        _logger.LogInformation("Sent notification for {count} new job vacancies for term: {term}", newJobs.Count, term);
                     }
                     else
                     {
@@ -79,10 +86,9 @@ public class Worker : BackgroundService
                 _logger.LogError(ex, "An error occurred while checking for new job vacancies.");
             }
 
-            _logger.LogInformation("Job alert cycle completed. Waiting for {interval} before the next cycle...", _checkInterval);
+            _logger.LogInformation("Job alert cycle completed. Waiting for {interval} before the next cycle...", checkInterval);
 
-            // Pause the execution for the defined interval before the next cycle.
-            await Task.Delay(_checkInterval, stoppingToken);
+            await Task.Delay(checkInterval, stoppingToken);
         }
     }
 }
