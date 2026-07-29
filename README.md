@@ -1,6 +1,6 @@
 # DevJobAlerter 🚀📱
 
-**DevJobAlerter** é um serviço em segundo plano (Worker Service) desenvolvido em **.NET 8** e containerizado com **Docker** que monitora o mercado de trabalho, captura vagas de tecnologia e envia alertas instantâneos diretamente para o seu **WhatsApp**.
+**DevJobAlerter** é um serviço em segundo plano (Worker Service) desenvolvido em **.NET 10** e containerizado com **Docker** que monitora o mercado de trabalho, captura vagas de tecnologia e envia alertas instantâneos diretamente para o seu **WhatsApp**.
 
 O projeto foi construído seguindo boas práticas de arquitetura de software, garantindo separação de conceitos, resiliência, persistência de dados com **EF Core + SQLite** (evitando avisos duplicados) e facilidade de implantação.
 
