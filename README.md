@@ -1,54 +1,51 @@
-# DevJobAlerter 🚀📱
+# DevJobAlerter 🚀
 
-**DevJobAlerter** é um serviço em segundo plano (Worker Service) desenvolvido em **.NET 10** e containerizado com **Docker** que monitora o mercado de trabalho, captura vagas de tecnologia e envia alertas instantâneos diretamente para o seu **WhatsApp**.
-
-O projeto foi construído seguindo boas práticas de arquitetura de software, garantindo separação de conceitos, resiliência, persistência de dados com **EF Core + SQLite** (evitando avisos duplicados) e facilidade de implantação.
-
----
-
-## 🛠️ Funcionalidades
-
-- **Busca Automatizada de Vagas:** Integração com a API da **Adzuna** para buscar oportunidades no mercado.
-- **Alertas no WhatsApp:** Disparo de notificações estruturadas via **Twilio API**.
-- **Deduplicação Inteligente:** Armazenamento em banco de dados **SQLite** via **Entity Framework Core** para evitar alertas repetidos.
-- **Containerização Total:** Pronto para rodar via **Docker** em qualquer ambiente sem necessidade de setup local do .NET.
-- **Filtros Dinâmicos:** Suporte a múltiplos termos de busca para desenvolvedores (ex: `.NET Júnior`, `C# Júnior`).
+O **DevJobAlerter** é um serviço em segundo plano (Worker Service) construído em **.NET 10** que busca vagas de desenvolvimento de software em APIs externas (como a Adzuna) e envia alertas em tempo real diretamente para o WhatsApp utilizando a Evolution API e ambiente Docker.
 
 ---
 
 ## 🏗️ Arquitetura do Projeto
 
-O ecossistema está dividido em três camadas principais:
+O ecossistema está estruturado seguindo os princípios de **Clean Architecture**, dividido em três camadas principais:
 
 | Camada | Descrição | Componentes Principais |
 | :--- | :--- | :--- |
-| **`DevJobAlerter.Domain`** | Contém as regras de negócio, entidades e contratos fundamentais do sistema. | `JobVacancy`, `SentJob`, `IJobService`, `INotificationService` |
-| **`DevJobAlerter.Infrastructure`** | Implementação das integrações externas, banco de dados e serviços de infraestrutura. | `AdzunaJobService`, `WhatsAppNotificationService`, `AppDbContext` |
-| **`DevJobAlerter.Worker`** | O ponto de entrada da aplicação que orquestra o ciclo de monitoramento e execução. | `Program.cs`, `Worker.cs` |
+| `DevJobAlerter.Domain` | Contém as regras de negócio, entidades e contratos fundamentais do sistema. | `JobVacancy`, `SentJob`, `IJobService`, `INotificationService`, `IJobRepository` |
+| `DevJobAlerter.Infrastructure` | Implementação das integrações externas, banco de dados e serviços de infraestrutura. | `AdzunaJobService`, `ApiWhatsAppNotificationService`, `AppDbContext`, `JobRepository` |
+| `DevJobAlerter.Worker` | O ponto de entrada da aplicação que orquestra o ciclo de monitoramento e execução. | `Program.cs`, `Worker.cs`, `JobSearchSettings` |
 
 ---
 
-## 📋 Pré-requisitos
+## 🛠️ Tecnologias e Ferramentas
 
-Antes de rodar a aplicação, certifique-se de ter instalado/configurado:
-
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-* Uma conta de desenvolvedor na [Adzuna](https://developer.adzuna.com/)
-* Uma conta no [Twilio](https://www.twilio.com/) com a Sandbox do WhatsApp ativa
+- **.NET 10 (Worker Service)**: Motor de execução e orquestração do serviço em segundo plano.
+- **Entity Framework Core & SQLite**: Armazenamento persistente das vagas enviadas para evitar notificações duplicadas.
+- **Evolution API (Serviço de WhatsApp)**: API REST para envio automatizado de mensagens no WhatsApp.
+- **PostgreSQL**: Banco de dados para persistência de estado da Evolution API.
+- **Docker & Docker Compose**: Containerização que garante a comunicação isolada entre os serviços.
 
 ---
 
-## 🔑 Configuração das Variáveis de Ambiente
+## 🔄 Fluxo de Execução
 
-Crie um arquivo `.env` na raiz do projeto contendo suas credenciais de acesso (utilize o modelo abaixo):
+1. O **Worker Service** é executado periodicamente com base nos termos de busca configurados.
+2. O **Adzuna Job Service** consulta novas oportunidades de trabalho na API externa.
+3. O **Repositório SQLite** verifica se a URL da vaga já foi enviada anteriormente.
+4. O **Serviço de Notificação** envia os detalhes da vaga para o WhatsApp através da **Evolution API**.
+5. As novas vagas enviadas são salvas no SQLite para impedir alertas repetidos.
 
-```env
-# Adzuna API
-Adzuna__AppId=SEU_ADZUNA_APP_ID
-Adzuna__AppKey=SUA_ADZUNA_APP_KEY
+---
 
-# Twilio API
-Twilio__AccountSid=SEU_TWILIO_ACCOUNT_SID
-Twilio__AuthToken=SEU_TWILIO_AUTH_TOKEN
-Twilio__FromPhoneNumber=whatsapp:+14155238886
-Twilio__ToPhoneNumber=whatsapp:+5511999999999
+## 🚀 Como Executar o Projeto
+
+### Pré-requisitos
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e em execução.
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) (opcional, apenas para desenvolvimento local fora do Docker).
+
+### Configuração
+
+1. Clone o repositório:
+   ```bash
+   git clone [https://github.com/seu-usuario/DevJobAlerter.git](https://github.com/seu-usuario/DevJobAlerter.git)
+   cd DevJobAlerter
