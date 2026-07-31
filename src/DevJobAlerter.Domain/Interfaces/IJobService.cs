@@ -2,9 +2,9 @@ using DevJobAlerter.Domain.Entities;
 
 namespace DevJobAlerter.Domain.Interfaces;
 
-
-/// 1. Interface defining the contract for fetching job vacancies.
-
+/// <summary>
+/// Defines the contract for fetching job vacancies from external providers.
+/// </summary>
 public interface IJobService
 {
     Task<List<JobVacancy>> GetRecentJobsAsync(string keyword);

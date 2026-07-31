@@ -1,22 +1,28 @@
-using System.Reflection.Metadata;
 using DevJobAlerter.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace DevJobAlerter.Infrastructure.Data;
 
-// 1. Database context for the application
+/// <summary>
+/// Entity Framework Core database context for the DevJobAlerter application.
+/// </summary>
 public class AppDbContext : DbContext
 {
-    // Constructor for dependency injection
+    /// <summary>
+    /// Initializes a new instance of <see cref="AppDbContext"/> with the specified options.
+    /// </summary>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
 
-    // Database table
+    /// <summary>
+    /// Gets or sets the DbSet representing sent job records.
+    /// </summary>
     public DbSet<SentJob> SentJobs { get; set; } = null!;
 
-    // Fluent API
+    /// <summary>
+    /// Configures entity mappings and database constraints using Fluent API.
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -24,7 +30,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SentJob>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.JobUrl).IsUnique(); // No duplicates for the same job URL
+            
+            // Ensures job URL uniqueness at the database level to prevent duplicate alerts
+            entity.HasIndex(e => e.JobUrl).IsUnique(); 
         });
     }
 }

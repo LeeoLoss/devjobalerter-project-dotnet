@@ -1,10 +1,19 @@
 namespace DevJobAlerter.Worker.Settings;
 
+/// <summary>
+/// Configuration settings for job search criteria and background service execution intervals.
+/// </summary>
 public class JobSearchSettings
 {
-    public const string SectionName = "JobSearchSettings"; // Section name in appsettings.json
+    public const string SectionName = "JobSearchSettings";
 
-    public List<string> SearchTerms { get; set; } = new(); // List of search terms for job vacancies
-    public int SearchIntervalMinutes { get; set; } = 60; // Interval in minutes to check for new job vacancies
-    public string TargetPhoneNumber { get; set; } = string.Empty; // Phone number to send job alerts to
+    /// <summary>
+    /// List of keywords or job titles to search for.
+    /// </summary>
+    public List<string> SearchTerms { get; set; } = new();
+
+    /// <summary>
+    /// Interval in minutes between each execution cycle.
+    /// </summary>
+    public int SearchIntervalMinutes { get; set; } = 60;
 }

@@ -8,7 +8,6 @@ using Microsoft.Extensions.Options;
 
 namespace DevJobAlerter.Worker;
 
-// 1. Worker service class
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
@@ -17,7 +16,6 @@ public class Worker : BackgroundService
     private readonly JobSearchSettings _settings;
     private readonly IServiceScopeFactory _scopeFactory;
 
-    // Constructor
     public Worker(
         ILogger<Worker> logger, 
         INotificationService notificationService, 
@@ -32,17 +30,9 @@ public class Worker : BackgroundService
         _scopeFactory = scopeFactory;
     }
 
-    // Override the ExecuteAsync method
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Starting DevJobAlerter Worker Service with search terms: {Terms}", string.Join(", ", _settings.SearchTerms));
-
-        // Guard clauses
-        if (string.IsNullOrWhiteSpace(_settings.TargetPhoneNumber))
-        {
-            _logger.LogError("Target phone number is not configured in appsettings or User Secrets.");
-            return;
-        }
 
         if (!_settings.SearchTerms.Any())
         {
@@ -50,10 +40,8 @@ public class Worker : BackgroundService
             return;
         }
 
-        // Configuring the check interval
         var checkInterval = TimeSpan.FromMinutes(_settings.SearchIntervalMinutes);
 
-        // Main loop
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -69,12 +57,11 @@ public class Worker : BackgroundService
                     var jobs = await _jobService.GetRecentJobsAsync(term);
                     var newJobs = new List<JobVacancy>();
                     
-                    // Cria um escopo isolado para usar o repositório do banco de dados
                     using (var scope = _scopeFactory.CreateScope())
                     {
                         var repository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
 
-                        // 1. Filtra as vagas verificando no SQLite se já foram enviadas antes
+                        // Filter out jobs already sent and persisted in SQLite
                         foreach (var job in jobs)
                         {
                             if (!await repository.ExistsAsync(job.Url))
@@ -83,10 +70,10 @@ public class Worker : BackgroundService
                             }
                         }
 
-                        // 2. Se houver novas vagas, notifica e salva no banco
+                        // Dispatch notifications and persist new jobs
                         if (newJobs.Any())
                         {
-                            await _notificationService.SendJobAlertAsync(_settings.TargetPhoneNumber, newJobs);
+                            await _notificationService.SendJobAlertAsync(newJobs, stoppingToken);
 
                             foreach (var job in newJobs)
                             {
@@ -101,9 +88,7 @@ public class Worker : BackgroundService
                                 _logger.LogInformation("Sent notification for job: {title} at {company}", job.Title, job.Company);
                             }
 
-                            // Confirma as alterações no banco de dados SQLite
                             await repository.SaveChangesAsync();
-
                             _logger.LogInformation("Sent notification for {count} new job vacancies for term: {term}", newJobs.Count, term);
                         }
                         else
@@ -118,10 +103,7 @@ public class Worker : BackgroundService
                 _logger.LogError(ex, "An error occurred while checking for new job vacancies.");
             }
 
-            // Delay before the next cycle
-            _logger.LogInformation("Job alert cycle completed. Waiting for {interval} before the next cycle...", checkInterval);
-
-            // Wait for the check interval
+            _logger.LogInformation("Job alert cycle completed. Waiting for {interval} before next cycle...", checkInterval);
             await Task.Delay(checkInterval, stoppingToken);
         }
     }
