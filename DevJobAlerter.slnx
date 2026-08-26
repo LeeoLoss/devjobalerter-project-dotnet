@@ -1,8 +1,8 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/DevJobAlerter.Application/DevJobAlerter.Application.csproj" />
-    <Project Path="src/DevJobAlerter.Domain/DevJobAlerter.Domain.csproj" />
-    <Project Path="src/DevJobAlerter.Infrastructure/DevJobAlerter.Infrastructure.csproj" />
-    <Project Path="src/DevJobAlerter.Worker/DevJobAlerter.Worker.csproj" />
+    <Project Path="backend/src/DevJobAlerter.Application/DevJobAlerter.Application.csproj" />
+    <Project Path="backend/src/DevJobAlerter.Domain/DevJobAlerter.Domain.csproj" />
+    <Project Path="backend/src/DevJobAlerter.Infrastructure/DevJobAlerter.Infrastructure.csproj" />
+    <Project Path="backend/src/DevJobAlerter.Worker/DevJobAlerter.Worker.csproj" />
   </Folder>
 </Solution>

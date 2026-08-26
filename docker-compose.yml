@@ -1,5 +1,5 @@
 services:
-  # 1. Banco de Dados para a Evolution API
+  # 1. Database for Evolution API
   postgres:
     image: postgres:15-alpine
     container_name: devjobalerter_postgres
@@ -13,7 +13,7 @@ services:
     networks:
       - devjobalerter-network
 
-  # 2. Api WhatsApp Service
+  # 2. WhatsApp API Service
   whatsapp-api:
     image: evoapicloud/evolution-api:latest
     container_name: evolution_api
@@ -42,7 +42,7 @@ services:
   devjobalerter-worker:
     build:
       context: .
-      dockerfile: src/DevJobAlerter.Worker/Dockerfile
+      dockerfile: backend/src/DevJobAlerter.Worker/Dockerfile
     container_name: devjobalerter_worker
     restart: always
     depends_on:
