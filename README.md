@@ -8,18 +8,19 @@ O **DevJobAlerter** é uma aplicação fullstack composta por um serviço em seg
 
 O repositório está dividido de forma modular entre aplicações de Backend e Frontend:
 
-| Diretorio | Camada / App | Descrição | Componentes Principais |
+| Diretório | Camada / App | Descrição | Componentes Principais |
 | :--- | :--- | :--- | :--- |
 | `backend/` | `DevJobAlerter.Domain` | Regras de negócio, entidades e interfaces de serviços. | `JobVacancy`, `SentJob`, `IJobService`, `INotificationService`, `IJobRepository` |
 | `backend/` | `DevJobAlerter.Infrastructure` | Contextos de banco de dados, repositórios e integração com a API da Adzuna. | `AdzunaJobService`, `ApiWhatsAppNotificationService`, `AppDbContext`, `JobRepository` |
 | `backend/` | `DevJobAlerter.Worker` | Ponto de entrada do serviço em segundo plano. | `Program.cs`, `Worker.cs`, `JobSearchSettings`, `Dockerfile` |
+| `backend/` | `DevJobAlerter.Api` | Interface Web API para consulta de dados no frontend. | `Program.cs`, `JobsController` |
 | `frontend/` | Painel Web | Interface visual para exibição de vagas e métricas. | React, Vite, TypeScript |
 
 ---
 
 ## 🛠️ Tecnologias e Ferramentas
 
-- **.NET 10 (Worker Service)**: Motor principal de execução e busca de vagas em segundo plano.
+- **.NET 10 (Worker Service & Web API)**: Motor principal de execução e busca de vagas em segundo plano.
 - **API Adzuna**: API externa REST utilizada para consulta e agregação de oportunidades de trabalho.
 - **React & Vite**: Interface web rápida para navegação e acompanhamento dos alertas.
 - **Entity Framework Core & SQLite**: Armazenamento persistente das vagas enviadas para evitar notificações duplicadas.
@@ -47,12 +48,45 @@ O repositório está dividido de forma modular entre aplicações de Backend e F
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) (opcional, para desenvolvimento C# local).
 - [Node.js](https://nodejs.org/) (opcional, para executar o frontend localmente fora do Docker).
 
-### Execução via Docker
+### Configuração de Cargos e Parâmetros (`appsettings.json`)
+
+Por boas práticas de segurança, o arquivo de configurações `appsettings.json` está oculto no `.gitignore` para evitar o envio acidental de credenciais para o repositório.
+
+1. Navegue até a pasta do projeto Worker:
+   ```bash
+   cd backend/src/DevJobAlerter.Worker
+
+2. Crie o seu arquivo appsettings.json local:
+   ```bash
+   touch appsettings.json   
+
+3. Defina os cargos desejados e os parâmetros de execução no arquivo criado (dentro de SearchTerms):
+   ```json
+   {
+     "Logging": {
+       "LogLevel": {
+         "Default": "Information",
+         "Microsoft.Hosting.Lifetime": "Information"
+       }
+     },
+     "JobSearchSettings": {
+       "SearchTerms": [
+         ".NET Developer",
+         "C# Developer",
+         "Fullstack"
+       ],
+       "SearchIntervalMinutes": 60
+     }
+   }
+
+## Execução via Docker
 
 1. Clone o repositório e acesse a pasta raiz:
    ```bash
    git clone [https://github.com/leoloss/devjobalerter-project-dotnet.git](https://github.com/leoloss/devjobalerter-project-dotnet.git)
    cd devjobalerter-project-dotnet
-2. Executar a aplicação via Docker Compose:
+
+2. Execute a aplicação via Docker Compose: 
    ```bash
    docker compose up -d --build
+   
