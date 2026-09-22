@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/src/">
+    <Project Path="backend/src/DevJobAlerter.Api/DevJobAlerter.Api.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="backend/src/DevJobAlerter.Application/DevJobAlerter.Application.csproj" />
     <Project Path="backend/src/DevJobAlerter.Domain/DevJobAlerter.Domain.csproj" />
